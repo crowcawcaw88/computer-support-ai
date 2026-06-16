@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Secure Site 🐾</title>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+</head>
+<body>
+
+    <h1>Welcome to my site! 🐱</h1>
+    
+    <div class="g-recaptcha" data-sitekey="YOUR_NEW_SITE_KEY_HERE"></div>
+    
+    <button onclick="submitForm()">Submit</button>
+
+    <script>
+        async function submitForm() {
+            // Get the token from the captcha widget
+            const token = grecaptcha.getResponse();
+
+            if (!token) {
+                alert("Please complete the captcha first! 🤖");
+                return;
+            }
+
+            // Send the token to your Netlify Function
+            const response = await fetch('/.netlify/functions/verify', {
+                method: 'POST',
+                body: JSON.stringify({ token: token })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert("You're human! Welcome in! 🎉🐱");
+            } else {
+                alert("Robot detected! 🤖🚫");
+            }
+        }
+    </script>
+</body>
+</html>
