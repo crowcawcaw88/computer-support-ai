@@ -13,28 +13,32 @@
     <button onclick="submitForm()">Submit</button>
 
     <script>
-        async function submitForm() {
-            // Get the token from the captcha widget
-            const token = grecaptcha.getResponse();
+      // This function should be called by your Submit button
+async function handleFormSubmit() {
+    // 1. Get the token from the reCAPTCHA widget
+    const token = grecaptcha.getResponse();
 
-            if (!token) {
-                alert("Please complete the captcha first! 🤖");
-                return;
-            }
+    // 2. Check if the token is empty (meaning they didn't do the captcha!)
+    if (token.length === 0) {
+        alert("Please complete the CAPTCHA first! 🐾");
+        return;
+    }
 
-            // Send the token to your Netlify Function
-            const response = await fetch('/.netlify/functions/verify', {
-                method: 'POST',
-                body: JSON.stringify({ token: token })
-            });
+    // 3. Send that token to your verify.js function
+    const response = await fetch('/.netlify/functions/verify', {
+        method: 'POST',
+        body: JSON.stringify({ token: token })
+    });
 
-            const data = await response.json();
+    const result = await response.json();
 
-            if (data.success) {
-                alert("You're human! Welcome in! 🎉🐱");
-            } else {
-                alert("Robot detected! 🤖🚫");
-            }
+    // 4. Tell the user what happened!
+    if (result.success) {
+        alert("Success! You're a human! 🐱");
+    } else {
+        alert("Robot detected! Try again. 🤖");
+    }
+}
         }
     </script>
 </body>
