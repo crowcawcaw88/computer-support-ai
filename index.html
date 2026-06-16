@@ -1,58 +1,89 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Five Acres Computer Support</title>
-    <!-- The "brains" for the Captcha: -->
+    <title>Computer-Support-AI</title>
+    <!-- Load Google reCAPTCHA -->
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #2c3e50; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        #screen { width: 400px; background: white; border-radius: 20px; padding: 20px; box-shadow: 0px 10px 30px rgba(0,0,0,0.3); text-align: center; }
+        .app-btn { display: block; width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; color: white; }
+        .hidden { display: none; }
+        #messages { height: 250px; overflow-y: auto; border: 1px solid #ddd; margin-bottom: 10px; padding: 10px; display: flex; flex-direction: column; text-align: left; }
+        .msg { margin: 5px 0; padding: 8px; border-radius: 8px; max-width: 85%; }
+        .bot { background: #f1f0f0; align-self: flex-start; }
+        .user { background: #3498db; color: white; align-self: flex-end; }
+        input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; box-sizing: border-box; }
+    </style>
 </head>
 <body>
-    <h1>Welcome to Five Acres Computer Support 🐱</h1>
-    <p>We are here to help you with all your tech needs!</p>
-    
-    <!-- The Team -->
-    <div id="team">
-        <p><strong>Meet the team:</strong></p>
-        <ul>
-            <li>
-                <strong>Oliver:</strong> "Hello, I am Oliver, your IT Specialist today. Please start by telling me your make and model of your device, and what is wrong. I can take over from there."
-                <br><em>Disclaimer: I am powered by Llama 3.1 AI and may be incorrect. Please report false information to support@openrouter.ai</em>
-            </li>
-            <br>
-            <li>
-                <strong>Chibs:</strong> "Hey, I am Chibs, your everyday AI companion. How can I assist you today? By the way, I cannot help with anything electronics, as I don't really know much about them. If you need help with an electronic, I will transfer you to a different representative. If you lose the conversation, you can find it again by going to https://five-acres-computer-support.netlify.app."
-                <br><em>Disclaimer: I am powered by Llama 3.1 AI and may be incorrect. Please report false information to support@openrouter.ai</em>
-            </li>
-        </ul>
+
+<div id="screen">
+    <!-- Google reCAPTCHA Gatekeeper -->
+    <div id="captcha-check">
+        <h2>Verify you are human</h2>
+        <div class="g-recaptcha" data-sitekey="YOUR_SITE_KEY_HERE"></div>
+        <br>
+        <button class="app-btn" style="background: #27ae60;" onclick="checkCaptcha()">Enter Support</button>
     </div>
 
-    <!-- The Captcha Widget -->
-    <div class="g-recaptcha" data-sitekey="6LdT3h0tAAAAABFJS441bhcGpEeckL9HCMLhcVs7" data-type="image"></div>
+    <div id="launcher" class="hidden">
+        <h2>Computer-Support-AI 🐱🐶</h2>
+        <button class="app-btn" style="background: #95a5a6;" onclick="loadAI('Chibs')">Chibs: General AI</button>
+        <button class="app-btn" style="background: #3498db;" onclick="loadAI('Oliver')">Oliver: IT Expert</button>
+    </div>
 
-    <br>
-    <button onclick="handleFormSubmit()">Submit</button>
+    <div id="chat-interface" class="hidden">
+        <h2 id="chat-title"></h2>
+        <div id="messages"></div>
+        <input type="text" id="userInput" placeholder="Type here...">
+        <button onclick="askAI()">Send</button>
+        <button style="width:100%; margin-top:5px; background:#7f8c8d; border:none; padding:10px; color:white; cursor:pointer;" onclick="location.reload()">Back</button>
+    </div>
+</div>
 
-    <script>
-        async function handleFormSubmit() {
-            const token = grecaptcha.getResponse();
+<script>
+    const API_KEY = "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"; 
+    let currentPersona = "";
+    let conversationHistory = [];
 
-            if (token.length === 0) {
-                alert("Please complete the CAPTCHA first! 🐾");
-                return;
-            }
+    async function checkCaptcha() {
+        const token = grecaptcha.getResponse();
+        if (!token) return alert("Please complete the reCAPTCHA! 🐾");
 
-            const response = await fetch('/.netlify/functions/verify', {
-                method: 'POST',
-                body: JSON.stringify({ token: token })
-            });
+        const response = await fetch('/.netlify/functions/verify', {
+            method: 'POST',
+            body: JSON.stringify({ token: token })
+        });
+        const result = await response.json();
 
-            const result = await response.json();
-
-            if (result.success) {
-                alert("Success! You're a human! 🐱");
-            } else {
-                alert("Robot detected! Try again. 🤖");
-            }
+        if (result.success) {
+            document.getElementById('captcha-check').classList.add('hidden');
+            document.getElementById('launcher').classList.remove('hidden');
+        } else {
+            alert("Verification failed. Try again!");
         }
-    </script>
+    }
+
+    function loadAI(name) {
+        currentPersona = name;
+        document.getElementById('launcher').classList.add('hidden');
+        document.getElementById('chat-interface').classList.remove('hidden');
+        document.getElementById('chat-title').innerText = name + " Chat";
+        const disclaimer = " (I am AI powered, so please verify info.)";
+        const greeting = (name === "Oliver") ? "Oliver: Hello! Please provide device make and model." + disclaimer : "Chibs: Hey! I help with everything except electronics." + disclaimer;
+        appendMessage(greeting, 'bot');
+    }
+
+    function appendMessage(text, className) {
+        const div = document.createElement('div');
+        div.className = 'msg ' + className;
+        div.innerText = text;
+        document.getElementById('messages').appendChild(div);
+        document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+    }
+    
+    // ... (Keep your original getAnswerFromAI and askAI logic here) ...
+</script>
 </body>
 </html>
