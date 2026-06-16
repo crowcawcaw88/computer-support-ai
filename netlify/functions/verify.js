@@ -1,8 +1,16 @@
 const https = require('https');
 
 exports.handler = async (event) => {
-    const { token } = JSON.parse(event.body);
-    const secretKey = "YOUR_SECRET_KEY_HERE"; 
+    let token;
+    try {
+        const body = JSON.parse(event.body);
+        token = body.token;
+    } catch (e) {
+        return { statusCode: 400, body: "Invalid request" };
+    }
+
+    // This grabs the key from your Netlify 'Environment Variables' vault
+    const secretKey = process.env.SECRET_KEY; 
 
     return new Promise((resolve) => {
         const url = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${token}`;
