@@ -1,6 +1,7 @@
 exports.handler = async (event) => {
-    // 1. Get the token from your website
-    const { token } = JSON.parse(event.body);
+    console.log("Function has been triggered!"); // This will show up in Netlify logs
+    
+    // ... rest of your code ...
     
     // 2. Put your Google Secret Key here!
     const secretKey = "6LdT3h0tAAAAABTX-k-FTGT0uTgHb7ZvL7ejL1SL"; 
