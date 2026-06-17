@@ -9,7 +9,6 @@ exports.handler = async (event) => {
         return { statusCode: 400, body: "Invalid request" };
     }
 
-    // This grabs the key from your Netlify 'Environment Variables' vault
     const secretKey = process.env.SECRET_KEY; 
 
     return new Promise((resolve) => {
@@ -20,6 +19,10 @@ exports.handler = async (event) => {
             res.on('data', (chunk) => { data += chunk; });
             res.on('end', () => {
                 const result = JSON.parse(data);
+                
+                // This will show up in your Netlify Function Logs
+                console.log("Google result:", result); 
+                
                 resolve({
                     statusCode: 200,
                     body: JSON.stringify({ success: result.success })
