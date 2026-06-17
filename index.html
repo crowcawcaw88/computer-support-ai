@@ -3,40 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <title>Support AI</title>
-    <!-- Google reCAPTCHA Script -->
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <style>
+        /* This brings back your colors and rounded corners! */
+        body { font-family: sans-serif; background-color: #f4f4f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        #captcha-container, #chat-container { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; }
+        button { background-color: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; margin-top: 15px; font-size: 16px; }
+        button:hover { background-color: #45a049; }
+        input { width: 80%; padding: 10px; border-radius: 10px; border: 1px solid #ccc; }
+    </style>
 </head>
 <body>
 
     <!-- Captcha Section -->
     <div id="captcha-container">
-        <div class="g-recaptcha" data-sitekey="6LdT3h0tAAAAABFJS441bhcGpEeckL9HCMLhcVs7"></div>
+        <h3>Verify you're human!</h3>
+        <div class="g-recaptcha" data-sitekey="YOUR_SITE_KEY_HERE"></div>
         <button onclick="checkCaptcha()">Enter Support</button>
     </div>
 
-    <!-- Chat Section (Hidden by default) -->
+    <!-- Chat Section (Hidden until verified) -->
     <div id="chat-container" style="display: none;">
         <h3>Welcome to Support!</h3>
         <input type="text" id="userMessage" placeholder="Ask a question...">
         <button onclick="sendMessage()">Send</button>
-        <div id="responseBox"></div>
+        <div id="responseBox" style="margin-top: 15px;"></div>
     </div>
 
     <script>
-        // 1. The Captcha Verification Function
         async function checkCaptcha() {
             const token = grecaptcha.getResponse();
             if (!token) {
                 alert("Please complete the reCAPTCHA first! 🐾");
                 return;
             }
-
             const res = await fetch("/.netlify/functions/verify", {
                 method: "POST",
                 body: JSON.stringify({ token: token })
             });
             const data = await res.json();
-
             if (data.success) {
                 document.getElementById("captcha-container").style.display = "none";
                 document.getElementById("chat-container").style.display = "block";
@@ -45,12 +50,11 @@
             }
         }
 
-        // 2. The Chat Function (Talks to your chat.js)
         async function sendMessage() {
             const message = document.getElementById("userMessage").value;
             const res = await fetch("/.netlify/functions/chat", {
                 method: "POST",
-                body: JSON.stringify({ message: message, aiType: 'Chibs' })
+                body: JSON.stringify({ message: message })
             });
             const data = await res.json();
             document.getElementById("responseBox").innerText = data.reply;
