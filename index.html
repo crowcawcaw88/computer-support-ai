@@ -2,7 +2,6 @@
 <html>
 <head>
     <title>Computer-Support-AI</title>
-    <!-- Load Google reCAPTCHA -->
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background-color: #2c3e50; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
@@ -19,10 +18,9 @@
 <body>
 
 <div id="screen">
-    <!-- Google reCAPTCHA Gatekeeper -->
     <div id="captcha-check">
         <h2>Verify you are human</h2>
-        <div class="g-recaptcha" data-sitekey="6LdT3h0tAAAAABFJS441bhcGpEeckL9HCMLhcVs7"></div>
+        <div class="g-recaptcha" data-sitekey="YOUR_SITE_KEY_HERE"></div>
         <br>
         <button class="app-btn" style="background: #27ae60;" onclick="checkCaptcha()">Enter Support</button>
     </div>
@@ -43,18 +41,19 @@
 </div>
 
 <script>
-    const API_KEY = "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"; 
-    let currentPersona = "";
-    let conversationHistory = [];
-
     async function checkCaptcha() {
         const token = grecaptcha.getResponse();
-        if (!token) return alert("Please complete the reCAPTCHA! 🐾");
+        if (!token) {
+            alert("Please complete the puzzle! 🐾");
+            return;
+        }
 
         const response = await fetch('/.netlify/functions/verify', {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token: token })
         });
+
         const result = await response.json();
 
         if (result.success) {
@@ -62,28 +61,16 @@
             document.getElementById('launcher').classList.remove('hidden');
         } else {
             alert("Verification failed. Try again!");
+            grecaptcha.reset();
         }
     }
 
     function loadAI(name) {
-        currentPersona = name;
         document.getElementById('launcher').classList.add('hidden');
         document.getElementById('chat-interface').classList.remove('hidden');
         document.getElementById('chat-title').innerText = name + " Chat";
-        const disclaimer = " (I am AI powered, so please verify info.)";
-        const greeting = (name === "Oliver") ? "Oliver: Hello! Please provide device make and model." + disclaimer : "Chibs: Hey! I help with everything except electronics." + disclaimer;
-        appendMessage(greeting, 'bot');
     }
-
-    function appendMessage(text, className) {
-        const div = document.createElement('div');
-        div.className = 'msg ' + className;
-        div.innerText = text;
-        document.getElementById('messages').appendChild(div);
-        document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
-    }
-    
-    // ... (Keep your original getAnswerFromAI and askAI logic here) ...
 </script>
+
 </body>
 </html>
