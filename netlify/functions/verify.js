@@ -9,7 +9,7 @@ exports.handler = async (event) => {
         return { statusCode: 400, body: "Invalid request" };
     }
 
-    const secretKey = process.env.SECRET_KEY; 
+   const secretKey = process.env.RECAPTCHA_SECRET_KEY;
 
     return new Promise((resolve) => {
         const url = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${token}`;
