@@ -44,36 +44,29 @@
 </div>
 
 <script>
-    async function checkCaptcha() {
-        const token = grecaptcha.getResponse();
-        if (!token) {
-            alert("Please complete the puzzle! 🐾");
-            return;
-        }
+   async function checkCaptcha() {
+    const token = grecaptcha.getResponse();
+    console.log("Captured Token:", token); // 🐾 This will show in your F12 Console!
 
-        const response = await fetch('/.netlify/functions/verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: token })
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            document.getElementById('captcha-check').classList.add('hidden');
-            document.getElementById('launcher').classList.remove('hidden');
-        } else {
-            alert("Verification failed. Try again!");
-            grecaptcha.reset();
-        }
+    if (!token) {
+        alert("Please complete the puzzle! 🐾");
+        return;
     }
 
-    function loadAI(name) {
-        document.getElementById('launcher').classList.add('hidden');
-        document.getElementById('chat-interface').classList.remove('hidden');
-        document.getElementById('chat-title').innerText = name + " Chat";
-    }
-</script>
+    const response = await fetch('/.netlify/functions/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: token }) // 📦 Sending the token here!
+    });
+    
+    const result = await response.json();
+    console.log("Server Response:", result); // 🤖 See what the server says!
 
-</body>
-</html>
+    if (result.success) {
+        document.getElementById('captcha-check').classList.add('hidden');
+        document.getElementById('launcher').classList.remove('hidden');
+    } else {
+        alert("Verification failed. Please try again! 🤖");
+        grecaptcha.reset(); 
+    }
+}
