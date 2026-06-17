@@ -5,38 +5,53 @@
     <title>Support AI</title>
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <style>
-        /* This brings back your colors and rounded corners! */
-        body { font-family: sans-serif; background-color: #f4f4f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        #captcha-container, #chat-container { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; }
+        /* Your original styles */
+        body { font-family: sans-serif; background-color: #f4f4f9; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        #gate, #captcha-container, #chat-container { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; }
+        #main-site { display: none; }
         button { background-color: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; margin-top: 15px; font-size: 16px; }
-        button:hover { background-color: #45a049; }
-        input { width: 80%; padding: 10px; border-radius: 10px; border: 1px solid #ccc; }
+        input { padding: 10px; border-radius: 10px; border: 1px solid #ccc; width: 80%; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-    <!-- Captcha Section -->
-    <div id="captcha-container">
-        <h3>Verify you're human!</h3>
-        <div class="g-recaptcha" data-sitekey="6LdT3h0tAAAAABFJS441bhcGpEeckL9HCMLhcVs7"></div>
-        <button onclick="checkCaptcha()">Enter Support</button>
+    <!-- MAINTENANCE GATE -->
+    <div id="gate">
+        <h1>Site Under Maintenance (503)</h1>
+        <p>Please enter the repair code to access.</p>
+        <input type="password" id="passInput" placeholder="Enter code...">
+        <button onclick="unlock()">Unlock</button>
     </div>
 
-    <!-- Chat Section (Hidden until verified) -->
-    <div id="chat-container" style="display: none;">
-        <h3>Welcome to Support!</h3>
-        <input type="text" id="userMessage" placeholder="Ask a question...">
-        <button onclick="sendMessage()">Send</button>
-        <div id="responseBox" style="margin-top: 15px;"></div>
+    <!-- YOUR FULL SITE -->
+    <div id="main-site">
+        <div id="captcha-container">
+            <h3>Verify you're human!</h3>
+            <div class="g-recaptcha" data-sitekey="6LdT3h0tAAAAABFJS441bhcGpEeckL9HCMLhcVs7"></div>
+            <button onclick="checkCaptcha()">Enter Support</button>
+        </div>
+
+        <div id="chat-container" style="display: none;">
+            <h3>Welcome to Support!</h3>
+            <input type="text" id="userMessage" placeholder="Ask a question...">
+            <button onclick="sendMessage()">Send</button>
+            <div id="responseBox" style="margin-top: 15px;"></div>
+        </div>
     </div>
 
     <script>
+        // 1. Maintenance Unlock
+        function unlock() {
+            if (document.getElementById("passInput").value === "Repair2026") {
+                document.getElementById("gate").style.display = "none";
+                document.getElementById("main-site").style.display = "block";
+            } else { alert("Incorrect code! 🚫"); }
+        }
+
+        // 2. Captcha Logic
         async function checkCaptcha() {
             const token = grecaptcha.getResponse();
-            if (!token) {
-                alert("Please complete the reCAPTCHA first! 🐾");
-                return;
-            }
+            if (!token) { alert("Please complete the reCAPTCHA first! 🐾"); return; }
             const res = await fetch("/.netlify/functions/verify", {
                 method: "POST",
                 body: JSON.stringify({ token: token })
@@ -45,11 +60,10 @@
             if (data.success) {
                 document.getElementById("captcha-container").style.display = "none";
                 document.getElementById("chat-container").style.display = "block";
-            } else {
-                alert("Verification failed. Please try again!");
-            }
+            } else { alert("Verification failed."); }
         }
 
+        // 3. Chat Logic
         async function sendMessage() {
             const message = document.getElementById("userMessage").value;
             const res = await fetch("/.netlify/functions/chat", {
