@@ -1,72 +1,60 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Computer-Support-AI</title>
+    <meta charset="UTF-8">
+    <title>Support AI</title>
+    <!-- Google reCAPTCHA Script -->
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #2c3e50; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        #screen { width: 400px; background: white; border-radius: 20px; padding: 20px; box-shadow: 0px 10px 30px rgba(0,0,0,0.3); text-align: center; }
-        
-        /* Force the captcha to display */
-        .g-recaptcha { display: flex; justify-content: center; min-height: 80px; margin: 15px 0; }
-        
-        .app-btn { display: block; width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; color: white; }
-        .hidden { display: none; }
-        #messages { height: 250px; overflow-y: auto; border: 1px solid #ddd; margin-bottom: 10px; padding: 10px; display: flex; flex-direction: column; text-align: left; }
-        .msg { margin: 5px 0; padding: 8px; border-radius: 8px; max-width: 85%; }
-        .bot { background: #f1f0f0; align-self: flex-start; }
-        .user { background: #3498db; color: white; align-self: flex-end; }
-        input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; box-sizing: border-box; }
-    </style>
 </head>
 <body>
 
-<div id="screen">
-    <div id="captcha-check">
-        <h2>Verify you are human</h2>
-       <div class="g-recaptcha" data-sitekey="6LdT3h0tAAAAABFJS441bhcGpEeckL9HCMLhcVs7"></div>
-        <button class="app-btn" style="background: #27ae60;" onclick="checkCaptcha()">Enter Support</button>
+    <!-- Captcha Section -->
+    <div id="captcha-container">
+        <div class="g-recaptcha" data-sitekey="6LdT3h0tAAAAABFJS441bhcGpEeckL9HCMLhcVs7"></div>
+        <button onclick="checkCaptcha()">Enter Support</button>
     </div>
 
-    <div id="launcher" class="hidden">
-        <h2>Computer-Support-AI 🐱🐶</h2>
-        <button class="app-btn" style="background: #95a5a6;" onclick="loadAI('Chibs')">Chibs: General AI</button>
-        <button class="app-btn" style="background: #3498db;" onclick="loadAI('Oliver')">Oliver: IT Expert</button>
+    <!-- Chat Section (Hidden by default) -->
+    <div id="chat-container" style="display: none;">
+        <h3>Welcome to Support!</h3>
+        <input type="text" id="userMessage" placeholder="Ask a question...">
+        <button onclick="sendMessage()">Send</button>
+        <div id="responseBox"></div>
     </div>
 
-    <div id="chat-interface" class="hidden">
-        <h2 id="chat-title"></h2>
-        <div id="messages"></div>
-        <input type="text" id="userInput" placeholder="Type here...">
-        <button onclick="askAI()">Send</button>
-        <button style="width:100%; margin-top:5px; background:#7f8c8d; border:none; padding:10px; color:white; cursor:pointer;" onclick="location.reload()">Back</button>
-    </div>
-</div>
+    <script>
+        // 1. The Captcha Verification Function
+        async function checkCaptcha() {
+            const token = grecaptcha.getResponse();
+            if (!token) {
+                alert("Please complete the reCAPTCHA first! 🐾");
+                return;
+            }
 
-<script>
-   async function checkCaptcha() {
-    const token = grecaptcha.getResponse();
-    console.log("Captured Token:", token); // 🐾 This will show in your F12 Console!
+            const res = await fetch("/.netlify/functions/verify", {
+                method: "POST",
+                body: JSON.stringify({ token: token })
+            });
+            const data = await res.json();
 
-    if (!token) {
-        alert("Please complete the puzzle! 🐾");
-        return;
-    }
+            if (data.success) {
+                document.getElementById("captcha-container").style.display = "none";
+                document.getElementById("chat-container").style.display = "block";
+            } else {
+                alert("Verification failed. Please try again!");
+            }
+        }
 
-    const response = await fetch('/.netlify/functions/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: token }) // 📦 Sending the token here!
-    });
-    
-    const result = await response.json();
-    console.log("Server Response:", result); // 🤖 See what the server says!
-
-    if (result.success) {
-        document.getElementById('captcha-check').classList.add('hidden');
-        document.getElementById('launcher').classList.remove('hidden');
-    } else {
-        alert("Verification failed. Please try again! 🤖");
-        grecaptcha.reset(); 
-    }
-}
+        // 2. The Chat Function (Talks to your chat.js)
+        async function sendMessage() {
+            const message = document.getElementById("userMessage").value;
+            const res = await fetch("/.netlify/functions/chat", {
+                method: "POST",
+                body: JSON.stringify({ message: message, aiType: 'Chibs' })
+            });
+            const data = await res.json();
+            document.getElementById("responseBox").innerText = data.reply;
+        }
+    </script>
+</body>
+</html>
