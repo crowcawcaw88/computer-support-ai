@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <title>Five Acres Computer Support</title>
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <style>
         body { font-family: 'Comic Sans MS', cursive, sans-serif; background-color: #ffeb3b; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
         #main-container { background: #e1f5fe; padding: 30px; border-radius: 25px; border: 5px solid #03a9f4; box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 80vw; height: 75vh; display: flex; gap: 20px; }
@@ -18,10 +17,9 @@
 <body>
 
     <div id="main-container">
-        <div class="side-panel" id="captcha-section">
+        <div class="side-panel" id="start-section">
             <h1>Five Acres Support 🐱🏡</h1>
-            <div class="g-recaptcha" data-sitekey="6LdT3h0tAAAAABFJS441bhcGpEeckL9HCMLhcVs7"></div>
-            <button onclick="checkCaptcha()">Enter Support 🚀</button>
+            <button onclick="showAssistants()">Enter Support 🚀</button>
         </div>
 
         <div class="side-panel" id="assistant-section" style="display: none;">
@@ -42,16 +40,16 @@
     <script>
         let currentAssistant = "";
 
-        async function checkCaptcha() {
-            const token = grecaptcha.getResponse();
-            if (!token) { alert("Please click the checkbox first! 🐾"); return; }
-            document.getElementById("captcha-section").style.display = "none";
+        function showAssistants() {
+            document.getElementById("start-section").style.display = "none";
             document.getElementById("assistant-section").style.display = "flex";
         }
 
         function selectAssistant(name) {
             currentAssistant = name;
+            document.getElementById("assistant-section").style.display = "none";
             document.getElementById("chat-panel").style.display = "flex";
+            
             const oliverGreeting = "Hello, I am Oliver, your IT specialist today. To start, please tell me your device's make and model, and your issues today for that device. If you have a issue with anything non-electronics related, please ask for our other representative, Chibs. (Disclaimer: I am fully run by AI and may be incorrect. Please email support@openrouter.com for information.)";
             const chibsGreeting = "Hello, I am Chibs, your everyday AI companion. You can ask me the weather, traffic, etc! But one thing, I cannot help with electronics. That is for Oliver, he knows way better than I do. (Disclaimer: I am fully run by AI and may be incorrect. Please email support@openrouter.com for information.)";
             
@@ -76,7 +74,6 @@
                 }
             }, 10000);
 
-            // Simulate server response
             setTimeout(() => {
                 clearTimeout(timeoutTrigger);
                 thinkingDiv.remove();
