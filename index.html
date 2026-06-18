@@ -2,60 +2,44 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Support AI</title>
-    <!-- We use the site key here -->
+    <title>Five Acres Computer Support</title>
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <style>
-        body { font-family: sans-serif; background-color: #e0f7fa; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        #gate, #captcha-container, #chat-container { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; width: 350px; }
-        button { background-color: #00796b; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; margin: 5px; }
-        input { padding: 10px; border-radius: 10px; border: 1px solid #ccc; width: 80%; }
-        #responseBox { margin-top: 15px; font-weight: bold; color: #333; }
+        body { font-family: 'Comic Sans MS', cursive, sans-serif; background-color: #ffeb3b; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        #captcha-container, #chat-container { background: #e1f5fe; padding: 25px; border-radius: 25px; border: 5px solid #03a9f4; box-shadow: 0 4px 15px rgba(0,0,0,0.2); text-align: center; width: 350px; }
+        button { background-color: #ff4081; color: white; border: none; padding: 12px 24px; border-radius: 15px; cursor: pointer; margin: 8px; font-weight: bold; }
+        input { padding: 12px; border-radius: 10px; border: 2px solid #03a9f4; width: 80%; }
+        #responseBox { margin-top: 20px; font-weight: bold; color: #d81b60; padding: 10px; }
+        h1 { color: #f50057; }
     </style>
 </head>
 <body>
 
-    <div id="gate">
-        <h1>Support Portal</h1>
-        <input type="password" id="passInput" placeholder="Enter code...">
-        <button onclick="unlock()">Unlock</button>
+    <div id="captcha-container">
+        <h1>Five Acres Computer Support 🐱🏡</h1>
+        <h3>Verify you're human! 🧩</h3>
+        <div class="g-recaptcha" data-sitekey="6LdT3h0tAAAAABFJS441bhcGpEeckL9HCMLhcVs7" data-size="invisible"></div>
+        <button onclick="triggerCaptcha()">Enter Support 🚀</button>
     </div>
 
-    <div id="main-site" style="display: none;">
-        <div id="captcha-container">
-            <h3>Verify you're human!</h3>
-            <!-- Adding data-size="invisible" forces the puzzle interaction -->
-            <div class="g-recaptcha" data-sitekey="6LdT3h0tAAAAABFJS441bhcGpEeckL9HCMLhcVs7" data-size="invisible"></div>
-            <button onclick="triggerCaptcha()">Enter Support</button>
+    <div id="chat-container" style="display: none;">
+        <h3>Pick your assistant: 🤖</h3>
+        <button onclick="selectAssistant('Oliver')">Oliver (Electronics) 💻</button>
+        <button onclick="selectAssistant('Chibs')">Chibs (Everything else) 🎈</button>
+        <div id="chat-area" style="display: none; margin-top: 20px;">
+            <input type="text" id="userMessage" placeholder="Type here...">
+            <button onclick="sendMessage()">Send 💌</button>
         </div>
-
-        <div id="chat-container" style="display: none;">
-            <h3>Pick your assistant:</h3>
-            <button onclick="selectAssistant('Oliver')">Oliver (Electronics)</button>
-            <button onclick="selectAssistant('Chibs')">Chibs (Everything else)</button>
-            <div id="chat-area" style="display: none; margin-top: 20px;">
-                <input type="text" id="userMessage" placeholder="Type here...">
-                <button onclick="sendMessage()">Send</button>
-            </div>
-            <div id="responseBox"></div>
-        </div>
+        <div id="responseBox"></div>
     </div>
 
     <script>
         let currentAssistant = "";
 
-        function unlock() {
-            if (document.getElementById("passInput").value === "Repair2026") {
-                document.getElementById("gate").style.display = "none";
-                document.getElementById("main-site").style.display = "block";
-            } else { alert("Incorrect code! 🚫"); }
-        }
-
         function triggerCaptcha() {
             grecaptcha.execute();
         }
 
-        // This runs after the puzzle is solved
         async function onCaptchaSolved(token) {
             const res = await fetch("/api/verify", { 
                 method: "POST", 
@@ -69,7 +53,6 @@
             } else { alert("Failed: " + data.reason); }
         }
 
-        // Initialize captcha with callback
         window.onload = function() {
             grecaptcha.render(document.querySelector('.g-recaptcha'), {
                 'sitekey': '6LdT3h0tAAAAABFJS441bhcGpEeckL9HCMLhcVs7',
@@ -95,9 +78,8 @@
                 return;
             }
 
-            document.getElementById("responseBox").innerText = "Thinking...";
+            document.getElementById("responseBox").innerText = "Thinking... 💭";
             
-            // Wait 5 seconds before fetching/responding
             setTimeout(async () => {
                 const res = await fetch("/api/chat", { 
                     method: "POST", 
