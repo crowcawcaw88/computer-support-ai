@@ -18,21 +18,18 @@
 <body>
 
     <div id="main-container">
-        <!-- Security Panel -->
         <div class="panel" id="security-panel">
             <h1>Five Acres Support 🐱🏡</h1>
             <div class="g-recaptcha" data-sitekey="6LdT3h0tAAAAABFJS441bhcGpEeckL9HCMLhcVs7" data-type="image"></div>
             <button onclick="checkCaptcha()">Enter Support 🚀</button>
         </div>
 
-        <!-- Assistant Selection -->
         <div class="panel" id="assistant-panel" style="display: none;">
             <h3>Pick your assistant: 🤖</h3>
             <button onclick="selectAssistant('Oliver')">Oliver (Electronics) 💻</button>
             <button onclick="selectAssistant('Chibs')">Chibs (Other) 🎈</button>
         </div>
 
-        <!-- Chat Panel -->
         <div class="chat-panel" id="chat-panel" style="display: none;">
             <div id="chatHistory"></div>
             <div style="margin-top: 10px;">
@@ -47,6 +44,7 @@
         let conversationHistory = [];
         let transferPending = false; 
         let targetAssistant = "";
+        const API_KEY = "YOUR_OPENROUTER_API_KEY"; // Replace with your key
 
         function checkCaptcha() {
             if (!grecaptcha.getResponse()) { alert("Please complete the puzzle! 🐾"); return; }
@@ -59,12 +57,13 @@
             document.getElementById("assistant-panel").style.display = "none";
             document.getElementById("chat-panel").style.display = "flex";
             
-            const oliverGreeting = "Hello, I am Oliver, your IT specialist today. To start, please tell me your device's make and model, and your issues today for that device. If you have a issue with anything non-electronics related, please ask for our other representative, Chibs. (Disclaimer: I am fully run by AI and may be incorrect. Please email support@openrouter.com for information.)";
-            const chibsGreeting = "Hello, I am Chibs, your everyday AI companion. You can ask me the weather, traffic, etc! But one thing, I cannot help with electronics. That is for Oliver, he knows way better than I do. (Disclaimer: I am fully run by AI and may be incorrect. Please email support@openrouter.com for information.)";
+            const systemPrompt = "You are " + name + ". " + (name === 'Oliver' ? "You are an IT specialist. Only help with electronics. If the user asks for non-electronics, say 'I cannot do your request because it is out of my expertise. Please add more details before I transfer you.' and flag it for transfer." : "You are an everyday companion. You cannot help with electronics. If the user asks for electronics, say 'I cannot do your request because it is out of my expertise. Please add more details before I transfer you.' and flag it for transfer.");
             
-            const greeting = (name === 'Oliver' ? oliverGreeting : chibsGreeting);
+            conversationHistory = [{ role: "system", content: systemPrompt }];
+            const greeting = (name === 'Oliver' ? "Hello, I am Oliver, your IT specialist today. To start, please tell me your device's make and model, and your issues today for that device. If you have a issue with anything non-electronics related, please ask for our other representative, Chibs. (Disclaimer: I am fully run by AI and may be incorrect. Please email support@openrouter.com for information.)" : "Hello, I am Chibs, your everyday AI companion. You can ask me the weather, traffic, etc! But one thing, I cannot help with electronics. That is for Oliver, he knows way better than I do. (Disclaimer: I am fully run by AI and may be incorrect. Please email support@openrouter.com for information.)");
+            
             document.getElementById("chatHistory").innerHTML = "<div><strong>" + name + ":</strong> " + greeting + "</div>";
-            conversationHistory.push(name + ": " + greeting);
+            conversationHistory.push({ role: "assistant", content: greeting });
         }
 
         async function sendMessage() {
@@ -73,38 +72,36 @@
             if (!msg) return;
 
             document.getElementById("chatHistory").innerHTML += "<div><strong>You:</strong> " + msg + "</div>";
-            conversationHistory.push("User: " + msg);
+            conversationHistory.push({ role: "user", content: msg });
             input.value = "";
 
-            const lowerMsg = msg.toLowerCase();
-            const electronicKeywords = ['switch', 'computer', 'laptop', 'screen', 'phone', 'device', 'tablet', 'console'];
-            const nonElectronicKeywords = ['bag', 'clothing', 'rip', 'torn', 'tear', 'sew', 'food', 'weather', 'traffic'];
-            
-            const isElectronic = electronicKeywords.some(word => lowerMsg.includes(word));
-            const isNonElectronic = nonElectronicKeywords.some(word => lowerMsg.includes(word));
+            if (transferPending) {
+                const historySummary = conversationHistory.map(m => m.content).join(" | ");
+                const finalReply = "Transfer complete! Hello, I am " + targetAssistant + ". I have reviewed our history: " + historySummary + ". How can I help?";
+                document.getElementById("chatHistory").innerHTML += "<div><strong>" + targetAssistant + ":</strong> " + finalReply + "</div>";
+                currentAssistant = targetAssistant;
+                transferPending = false;
+                return;
+            }
 
-            setTimeout(() => {
-                // 1. If we are finishing a transfer:
-                if (transferPending) {
-                    const historySummary = conversationHistory.join(" | ");
-                    const reply = "Transfer complete! Hello, I am " + targetAssistant + ". I have reviewed our history: (" + historySummary + "). I am ready to help you with that!";
-                    document.getElementById("chatHistory").innerHTML += "<div><strong>" + targetAssistant + ":</strong> " + reply + "</div>";
-                    currentAssistant = targetAssistant;
-                    transferPending = false;
-                }
-                // 2. Oliver detects non-electronic request:
-                else if (currentAssistant === 'Oliver' && (isNonElectronic || (!isElectronic && (lowerMsg.includes('repair') || lowerMsg.includes('help')) && !msg.includes('switch')))) {
-                    transferPending = true;
-                    targetAssistant = 'Chibs';
-                    const reply = "I cannot do your request because it is out of my expertise. Please add more details before I transfer you.";
-                    document.getElementById("chatHistory").innerHTML += "<div><strong>" + currentAssistant + ":</strong> " + reply + "</div>";
-                }
-                // 3. Normal conversation:
-                else {
-                    const reply = "I understand. Could you please provide the make, model, and specific issue so I can help? 🐱";
-                    document.getElementById("chatHistory").innerHTML += "<div><strong>" + currentAssistant + ":</strong> " + reply + "</div>";
-                }
-            }, 1000);
+            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                method: "POST",
+                headers: { "Authorization": "Bearer " + API_KEY, "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    "model": "meta-llama/llama-3.1-8b-instruct",
+                    "messages": conversationHistory
+                })
+            });
+
+            const data = await response.json();
+            const botReply = data.choices[0].message.content;
+            document.getElementById("chatHistory").innerHTML += "<div><strong>" + currentAssistant + ":</strong> " + botReply + "</div>";
+            conversationHistory.push({ role: "assistant", content: botReply });
+
+            if (botReply.includes("transfer")) {
+                transferPending = true;
+                targetAssistant = (currentAssistant === 'Oliver' ? 'Chibs' : 'Oliver');
+            }
         }
     </script>
 </body>
