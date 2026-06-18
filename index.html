@@ -6,35 +6,45 @@
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <style>
         body { font-family: 'Comic Sans MS', cursive, sans-serif; background-color: #ffeb3b; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        #captcha-container, #chat-container { background: #e1f5fe; padding: 25px; border-radius: 25px; border: 5px solid #03a9f4; box-shadow: 0 4px 15px rgba(0,0,0,0.2); text-align: center; width: 350px; }
-        button { background-color: #ff4081; color: white; border: none; padding: 12px 24px; border-radius: 15px; cursor: pointer; margin: 8px; font-weight: bold; }
-        input { padding: 12px; border-radius: 10px; border: 2px solid #03a9f4; width: 80%; }
-        #chatHistory { height: 150px; overflow-y: auto; background: white; border: 2px solid #03a9f4; border-radius: 10px; margin-top: 15px; padding: 10px; text-align: left; font-size: 0.9em; }
-        #responseBox { margin-top: 10px; font-weight: bold; color: #d81b60; padding: 10px; }
-        h1 { color: #f50057; }
+        
+        /* Expanded Main Container */
+        #main-container { background: #e1f5fe; padding: 30px; border-radius: 25px; border: 5px solid #03a9f4; box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 80vw; height: 75vh; display: flex; gap: 20px; }
+        
+        .side-panel { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+        .chat-panel { flex: 2; display: flex; flex-direction: column; }
+
+        button { background-color: #ff4081; color: white; border: none; padding: 15px; border-radius: 15px; cursor: pointer; margin: 10px 0; font-weight: bold; }
+        input { padding: 12px; border-radius: 10px; border: 2px solid #03a9f4; width: 100%; box-sizing: border-box; }
+        
+        /* Chat History is now the main focus */
+        #chatHistory { flex-grow: 1; background: white; border: 2px solid #03a9f4; border-radius: 10px; padding: 15px; overflow-y: auto; text-align: left; font-size: 1.1em; }
+        
+        h1 { color: #f50057; text-align: center; }
         .g-recaptcha { display: flex; justify-content: center; margin: 15px 0; }
     </style>
 </head>
 <body>
 
-    <div id="captcha-container">
-        <h1>Five Acres Computer Support 🐱🏡</h1>
-        <h3>Verify you're human! 🧩</h3>
-        <div class="g-recaptcha" data-sitekey="6LdT3h0tAAAAABFJS441bhcGpEeckL9HCMLhcVs7"></div>
-        <button onclick="checkCaptcha()">Enter Support 🚀</button>
-    </div>
-
-    <div id="chat-container" style="display: none;">
-        <h3>Pick your assistant: 🤖</h3>
-        <button onclick="selectAssistant('Oliver')">Oliver (Electronics) 💻</button>
-        <button onclick="selectAssistant('Chibs')">Chibs (Everything else) 🎈</button>
-        
-        <div id="chat-area" style="display: none; margin-top: 20px;">
-            <div id="chatHistory"></div>
-            <input type="text" id="userMessage" placeholder="Type here..." style="margin-top: 10px;">
-            <button onclick="sendMessage()">Send 💌</button>
+    <div id="main-container">
+        <div class="side-panel" id="captcha-section">
+            <h1>Five Acres Support 🐱🏡</h1>
+            <div class="g-recaptcha" data-sitekey="6LdT3h0tAAAAABFJS441bhcGpEeckL9HCMLhcVs7"></div>
+            <button onclick="checkCaptcha()">Enter Support 🚀</button>
         </div>
-        <div id="responseBox"></div>
+
+        <div class="side-panel" id="assistant-section" style="display: none;">
+            <h3>Pick your assistant: 🤖</h3>
+            <button onclick="selectAssistant('Oliver')">Oliver (Electronics) 💻</button>
+            <button onclick="selectAssistant('Chibs')">Chibs (Other) 🎈</button>
+        </div>
+
+        <div class="chat-panel" id="chat-panel" style="display: none;">
+            <div id="chatHistory">Welcome! Please pick an assistant to start your session. 🐱✨</div>
+            <div style="margin-top: 10px;">
+                <input type="text" id="userMessage" placeholder="Type your message here...">
+                <button onclick="sendMessage()" style="width: 100%;">Send 💌</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -44,26 +54,18 @@
         async function checkCaptcha() {
             const token = grecaptcha.getResponse();
             if (!token) { alert("Please click the checkbox first! 🐾"); return; }
-            const res = await fetch("/api/verify", { 
-                method: "POST", 
-                headers: {"Content-Type": "application/json"}, 
-                body: JSON.stringify({ token: token }) 
-            });
-            const data = await res.json();
-            if (data.success) {
-                document.getElementById("captcha-container").style.display = "none";
-                document.getElementById("chat-container").style.display = "block";
-            } else { alert("Verification failed!"); grecaptcha.reset(); }
+            // Mocking success for demo
+            document.getElementById("captcha-section").style.display = "none";
+            document.getElementById("assistant-section").style.display = "flex";
         }
 
         function selectAssistant(name) {
             currentAssistant = name;
-            document.getElementById("chat-area").style.display = "block";
-            document.getElementById("chatHistory").innerHTML = "";
+            document.getElementById("chat-panel").style.display = "flex";
             const greeting = name === 'Oliver' ? 
-                "Hello, I am your IT specialist, Oliver. To start, please say your devices make and model, and what is wrong." : 
-                "Hello, I am chibs, your everyday AI assistant. I do everything except electronics!";
-            document.getElementById("responseBox").innerText = greeting;
+                "Hello, I am Oliver. Please state your device make/model and the issue." : 
+                "Hello, I am Chibs! I do everything except electronics. How can I help?";
+            document.getElementById("chatHistory").innerHTML = "<div><strong>" + name + ":</strong> " + greeting + "</div>";
         }
 
         async function sendMessage() {
@@ -71,38 +73,18 @@
             const msg = input.value;
             if (!msg) return;
 
-            document.getElementById("chatHistory").innerHTML += "<div>You: " + msg + "</div>";
+            document.getElementById("chatHistory").innerHTML += "<div><strong>You:</strong> " + msg + "</div>";
             input.value = "";
 
-            if ((currentAssistant === 'Oliver' && msg.toLowerCase().includes('chibs')) || 
-                (currentAssistant === 'Chibs' && msg.toLowerCase().includes('oliver'))) {
-                alert("Before I transfer you, please add more details about your issue.");
-                isTransferring = true;
-                return;
-            }
-
-            document.getElementById("responseBox").innerText = "Thinking... 💭";
+            // Simulating API response
+            document.getElementById("chatHistory").innerHTML += "<div><em>Thinking... 💭</em></div>";
             
-            setTimeout(async () => {
-                const res = await fetch("/api/chat", { 
-                    method: "POST", 
-                    headers: {"Content-Type": "application/json"}, 
-                    body: JSON.stringify({ message: msg, summarize: isTransferring }) 
-                });
-                const data = await res.json();
-                
-                let reply;
-                if (isTransferring) {
-                    const summaryText = data.summary || "your issue"; 
-                    reply = "You said " + summaryText + ", correct?";
-                } else {
-                    reply = data.reply || "I'm sorry, I'm having a little trouble thinking right now. Could you rephrase that? 🐱";
-                }
-                
-                document.getElementById("responseBox").innerText = reply;
-                document.getElementById("chatHistory").innerHTML += "<div>" + currentAssistant + ": " + reply + "</div>";
-                isTransferring = false;
-            }, 5000);
+            setTimeout(() => {
+                // Remove "Thinking" msg and add response
+                document.getElementById("chatHistory").lastElementChild.remove();
+                const reply = "This is a simulated response from " + currentAssistant + "! 🐱";
+                document.getElementById("chatHistory").innerHTML += "<div><strong>" + currentAssistant + ":</strong> " + reply + "</div>";
+            }, 2000);
         }
     </script>
 </body>
