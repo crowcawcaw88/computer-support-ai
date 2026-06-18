@@ -9,7 +9,8 @@
         #captcha-container, #chat-container { background: #e1f5fe; padding: 25px; border-radius: 25px; border: 5px solid #03a9f4; box-shadow: 0 4px 15px rgba(0,0,0,0.2); text-align: center; width: 350px; }
         button { background-color: #ff4081; color: white; border: none; padding: 12px 24px; border-radius: 15px; cursor: pointer; margin: 8px; font-weight: bold; }
         input { padding: 12px; border-radius: 10px; border: 2px solid #03a9f4; width: 80%; }
-        #responseBox { margin-top: 20px; font-weight: bold; color: #d81b60; padding: 10px; }
+        #chatHistory { height: 150px; overflow-y: auto; background: white; border: 2px solid #03a9f4; border-radius: 10px; margin-top: 15px; padding: 10px; text-align: left; font-size: 0.9em; }
+        #responseBox { margin-top: 10px; font-weight: bold; color: #d81b60; padding: 10px; }
         h1 { color: #f50057; }
         .g-recaptcha { display: flex; justify-content: center; margin: 15px 0; }
     </style>
@@ -27,8 +28,10 @@
         <h3>Pick your assistant: 🤖</h3>
         <button onclick="selectAssistant('Oliver')">Oliver (Electronics) 💻</button>
         <button onclick="selectAssistant('Chibs')">Chibs (Everything else) 🎈</button>
+        
         <div id="chat-area" style="display: none; margin-top: 20px;">
-            <input type="text" id="userMessage" placeholder="Type here...">
+            <div id="chatHistory"></div>
+            <input type="text" id="userMessage" placeholder="Type here..." style="margin-top: 10px;">
             <button onclick="sendMessage()">Send 💌</button>
         </div>
         <div id="responseBox"></div>
@@ -36,44 +39,42 @@
 
     <script>
         let currentAssistant = "";
+        let isTransferring = false;
 
         async function checkCaptcha() {
             const token = grecaptcha.getResponse();
-            if (!token) {
-                alert("Please click the checkbox first! 🐾");
-                return;
-            }
-            
-            const res = await fetch("/api/verify", { 
-                method: "POST", 
-                headers: {"Content-Type": "application/json"}, 
-                body: JSON.stringify({ token: token }) 
-            });
+            if (!token) { alert("Please click the checkbox first! 🐾"); return; }
+            const res = await fetch("/api/verify", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ token: token }) });
             const data = await res.json();
             if (data.success) {
                 document.getElementById("captcha-container").style.display = "none";
                 document.getElementById("chat-container").style.display = "block";
-            } else { 
-                alert("Verification failed. Please try again!"); 
-                grecaptcha.reset();
-            }
+            } else { alert("Verification failed!"); grecaptcha.reset(); }
         }
 
         function selectAssistant(name) {
             currentAssistant = name;
             document.getElementById("chat-area").style.display = "block";
+            document.getElementById("chatHistory").innerHTML = "";
             const greeting = name === 'Oliver' ? 
-                "Hello, I am your IT specialist, Oliver. To start, please say your devices make and model, and what is wrong. If you have any other questions not related to electronics, please ask for Chibs. (Disclaimer: I am run by AI and may be incorrect. Please email support@openrouter.ai for questions about how I work.)" :
-                "Hello, I am chibs, your everyday AI assistant. One thing about me, I do everything except electronics. Never learned. If you need electronics help, please ask for Oliver. (Disclaimer: I am run by AI and may be incorrect. Please email support@openrouter.ai for questions about how I work.)";
+                "Hello, I am your IT specialist, Oliver. To start, please say your devices make and model, and what is wrong. If you have any other questions not related to electronics, please ask for Chibs." : 
+                "Hello, I am chibs, your everyday AI assistant. One thing about me, I do everything except electronics. If you need electronics help, please ask for Oliver.";
             document.getElementById("responseBox").innerText = greeting;
         }
 
         async function sendMessage() {
-            const msg = document.getElementById("userMessage").value;
-            
+            const input = document.getElementById("userMessage");
+            const msg = input.value;
+            if (!msg) return;
+
+            document.getElementById("chatHistory").innerHTML += "<div>You: " + msg + "</div>";
+            input.value = "";
+
+            // If they are asking for the other assistant, trigger the summary request
             if ((currentAssistant === 'Oliver' && msg.toLowerCase().includes('chibs')) || 
                 (currentAssistant === 'Chibs' && msg.toLowerCase().includes('oliver'))) {
                 alert("Before I transfer you, please add more details about your issue.");
+                isTransferring = true;
                 return;
             }
 
@@ -83,10 +84,16 @@
                 const res = await fetch("/api/chat", { 
                     method: "POST", 
                     headers: {"Content-Type": "application/json"}, 
-                    body: JSON.stringify({ message: msg }) 
+                    body: JSON.stringify({ message: msg, summarize: isTransferring }) 
                 });
                 const data = await res.json();
-                document.getElementById("responseBox").innerText = "Summarization: You said " + msg + ", correct? " + data.reply;
+                
+                // If it was a transfer, the server should return a 'summary' field
+                let reply = isTransferring ? "Summarization: " + data.summary + ", correct?" : data.reply;
+                
+                document.getElementById("responseBox").innerText = reply;
+                document.getElementById("chatHistory").innerHTML += "<div>" + currentAssistant + ": " + reply + "</div>";
+                isTransferring = false;
             }, 5000);
         }
     </script>
