@@ -18,21 +18,19 @@
 <body>
 
     <div id="main-container">
-        <!-- Security Panel -->
+        <!-- CAPTCHA: data-type="image" hints at a puzzle -->
         <div class="panel" id="security-panel">
             <h1>Five Acres Support 🐱🏡</h1>
-          <div class="g-recaptcha" data-sitekey="6LdT3h0tAAAAABFJS441bhcGpEeckL9HCMLhcVs7" data-type="image"></div>
+            <div class="g-recaptcha" data-sitekey="6LdT3h0tAAAAABFJS441bhcGpEeckL9HCMLhcVs7" data-type="image"></div>
             <button onclick="checkCaptcha()">Enter Support 🚀</button>
         </div>
 
-        <!-- Assistant Selection -->
         <div class="panel" id="assistant-panel" style="display: none;">
             <h3>Pick your assistant: 🤖</h3>
             <button onclick="selectAssistant('Oliver')">Oliver (Electronics) 💻</button>
             <button onclick="selectAssistant('Chibs')">Chibs (Other) 🎈</button>
         </div>
 
-        <!-- Chat Panel -->
         <div class="chat-panel" id="chat-panel" style="display: none;">
             <div id="chatHistory"></div>
             <div style="margin-top: 10px;">
@@ -49,7 +47,7 @@
 
         function checkCaptcha() {
             const token = grecaptcha.getResponse();
-            if (!token) { alert("Please click the puzzle/checkbox first! 🐾"); return; }
+            if (!token) { alert("Please complete the puzzle first! 🐾"); return; }
             document.getElementById("security-panel").style.display = "none";
             document.getElementById("assistant-panel").style.display = "flex";
         }
@@ -58,13 +56,8 @@
             currentAssistant = name;
             document.getElementById("assistant-panel").style.display = "none";
             document.getElementById("chat-panel").style.display = "flex";
-            
-            const oliverGreeting = "Hello, I am Oliver, your IT specialist today. To start, please tell me your device's make and model, and your issues today for that device. If you have a issue with anything non-electronics related, please ask for our other representative, Chibs. (Disclaimer: I am fully run by AI and may be incorrect. Please email support@openrouter.com for information.)";
-            const chibsGreeting = "Hello, I am Chibs, your everyday AI companion. You can ask me the weather, traffic, etc! But one thing, I cannot help with electronics. That is for Oliver, he knows way better than I do. (Disclaimer: I am fully run by AI and may be incorrect. Please email support@openrouter.com for information.)";
-            
-            const greeting = (name === 'Oliver' ? oliverGreeting : chibsGreeting);
+            const greeting = (name === 'Oliver' ? "Hello! I'm Oliver. What is your device's make, model, and issue?" : "Hello! I'm Chibs. How can I help you today?");
             document.getElementById("chatHistory").innerHTML = "<div><strong>" + name + ":</strong> " + greeting + "</div>";
-            conversationHistory.push(name + ": " + greeting);
         }
 
         async function sendMessage() {
@@ -80,32 +73,22 @@
             thinkingDiv.innerHTML = "<em>" + currentAssistant + " is thinking... 💭</em>";
             document.getElementById("chatHistory").appendChild(thinkingDiv);
 
-            // Detect if user is asking for the other person
-            const lowerMsg = msg.toLowerCase();
-            const wantsTransfer = (currentAssistant === 'Oliver' && lowerMsg.includes('chibs')) || 
-                                  (currentAssistant === 'Chibs' && lowerMsg.includes('oliver'));
-
             setTimeout(() => {
                 thinkingDiv.remove();
-
-                if (isTransferring) {
-                    // Completing the transfer
-                    const summary = conversationHistory.join(" | ");
-                    const reply = "Transferring complete! I have reviewed our history: (" + summary + "). I am now ready to assist you further.";
-                    document.getElementById("chatHistory").innerHTML += "<div><strong>System:</strong> " + reply + "</div>";
-                    isTransferring = false;
-                } else if (wantsTransfer) {
-                    // Warning before transfer
+                const lowerMsg = msg.toLowerCase();
+                
+                // Logic: Only respond if it's a specific request, otherwise be conversational
+                let reply = "";
+                if (lowerMsg.includes("broken") || lowerMsg.includes("issue")) {
+                    reply = "I see. Please provide the exact model number so I can check my database for that specific " + currentAssistant + " issue.";
+                } else if (lowerMsg.includes("chibs") || lowerMsg.includes("oliver")) {
                     isTransferring = true;
-                    const reply = "I cannot do your request because it is out of my expertise. Please add more details before I transfer you.";
-                    document.getElementById("chatHistory").innerHTML += "<div><strong>" + currentAssistant + ":</strong> " + reply + "</div>";
-                    conversationHistory.push(currentAssistant + ": " + reply);
+                    reply = "I cannot do that request here. Please add a bit more detail about your problem, and I will transfer you.";
                 } else {
-                    // Normal response
-                    const reply = "I understand you need help with: \"" + msg + "\". Let me look into that for you! 🐱";
-                    document.getElementById("chatHistory").innerHTML += "<div><strong>" + currentAssistant + ":</strong> " + reply + "</div>";
-                    conversationHistory.push(currentAssistant + ": " + reply);
+                    reply = "I'm ready to help. Please tell me more about what is happening with your device.";
                 }
+                
+                document.getElementById("chatHistory").innerHTML += "<div><strong>" + currentAssistant + ":</strong> " + reply + "</div>";
             }, 2000);
         }
     </script>
