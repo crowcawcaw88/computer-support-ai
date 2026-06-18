@@ -3,40 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <title>Support AI</title>
+    <!-- We use the site key here -->
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <style>
-        body { font-family: sans-serif; background-color: #f4f4f9; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        #gate, #captcha-container, #chat-container { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; }
-        #main-site { display: none; }
-        button { background-color: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; margin-top: 15px; font-size: 16px; }
-        input { padding: 10px; border-radius: 10px; border: 1px solid #ccc; width: 80%; margin-top: 10px; }
+        body { font-family: sans-serif; background-color: #e0f7fa; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        #gate, #captcha-container, #chat-container { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; width: 350px; }
+        button { background-color: #00796b; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; margin: 5px; }
+        input { padding: 10px; border-radius: 10px; border: 1px solid #ccc; width: 80%; }
+        #responseBox { margin-top: 15px; font-weight: bold; color: #333; }
     </style>
 </head>
 <body>
 
     <div id="gate">
-        <h1>Site Under Maintenance (503)</h1>
-        <p>Please enter the repair code to access.</p>
+        <h1>Support Portal</h1>
         <input type="password" id="passInput" placeholder="Enter code...">
         <button onclick="unlock()">Unlock</button>
     </div>
 
-    <div id="main-site">
+    <div id="main-site" style="display: none;">
         <div id="captcha-container">
             <h3>Verify you're human!</h3>
-            <div class="g-recaptcha" data-sitekey="6LdT3h0tAAAAABFJS441bhcGpEeckL9HCMLhcVs7"></div>
-            <button onclick="checkCaptcha()">Enter Support</button>
+            <!-- Adding data-size="invisible" forces the puzzle interaction -->
+            <div class="g-recaptcha" data-sitekey="6LdT3h0tAAAAABFJS441bhcGpEeckL9HCMLhcVs7" data-size="invisible"></div>
+            <button onclick="triggerCaptcha()">Enter Support</button>
         </div>
 
         <div id="chat-container" style="display: none;">
-            <h3>Welcome to Support!</h3>
-            <input type="text" id="userMessage" placeholder="Ask a question...">
-            <button onclick="sendMessage()">Send</button>
-            <div id="responseBox" style="margin-top: 15px;"></div>
+            <h3>Pick your assistant:</h3>
+            <button onclick="selectAssistant('Oliver')">Oliver (Electronics)</button>
+            <button onclick="selectAssistant('Chibs')">Chibs (Everything else)</button>
+            <div id="chat-area" style="display: none; margin-top: 20px;">
+                <input type="text" id="userMessage" placeholder="Type here...">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+            <div id="responseBox"></div>
         </div>
     </div>
 
     <script>
+        let currentAssistant = "";
+
         function unlock() {
             if (document.getElementById("passInput").value === "Repair2026") {
                 document.getElementById("gate").style.display = "none";
@@ -44,34 +51,62 @@
             } else { alert("Incorrect code! 🚫"); }
         }
 
-        async function checkCaptcha() {
-            const token = grecaptcha.getResponse();
-            if (!token) { alert("Please complete the reCAPTCHA first! 🐾"); return; }
-            
-            const res = await fetch("/api/verify", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ token: token })
+        function triggerCaptcha() {
+            grecaptcha.execute();
+        }
+
+        // This runs after the puzzle is solved
+        async function onCaptchaSolved(token) {
+            const res = await fetch("/api/verify", { 
+                method: "POST", 
+                headers: {"Content-Type": "application/json"}, 
+                body: JSON.stringify({ token: token }) 
             });
             const data = await res.json();
-            
             if (data.success) {
                 document.getElementById("captcha-container").style.display = "none";
                 document.getElementById("chat-container").style.display = "block";
-            } else {
-                alert("Verification failed: " + data.reason);
-            }
+            } else { alert("Failed: " + data.reason); }
+        }
+
+        // Initialize captcha with callback
+        window.onload = function() {
+            grecaptcha.render(document.querySelector('.g-recaptcha'), {
+                'sitekey': '6LdT3h0tAAAAABFJS441bhcGpEeckL9HCMLhcVs7',
+                'callback': onCaptchaSolved
+            });
+        };
+
+        function selectAssistant(name) {
+            currentAssistant = name;
+            document.getElementById("chat-area").style.display = "block";
+            const greeting = name === 'Oliver' ? 
+                "Hello, I am your IT specialist, Oliver. To start, please say your devices make and model, and what is wrong. If you have any other questions not related to electronics, please ask for Chibs. (Disclaimer: I am run by AI and may be incorrect. Please email support@openrouter.ai for questions about how I work.)" :
+                "Hello, I am chibs, your everyday AI assistant. One thing about me, I do everything except electronics. Never learned. If you need electronics help, please ask for Oliver. (Disclaimer: I am run by AI and may be incorrect. Please email support@openrouter.ai for questions about how I work.)";
+            document.getElementById("responseBox").innerText = greeting;
         }
 
         async function sendMessage() {
-            const message = document.getElementById("userMessage").value;
-            const res = await fetch("/api/chat", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message: message })
-            });
-            const data = await res.json();
-            document.getElementById("responseBox").innerText = data.reply;
+            const msg = document.getElementById("userMessage").value;
+            
+            if ((currentAssistant === 'Oliver' && msg.toLowerCase().includes('chibs')) || 
+                (currentAssistant === 'Chibs' && msg.toLowerCase().includes('oliver'))) {
+                alert("Before I transfer you, please add more details about your issue.");
+                return;
+            }
+
+            document.getElementById("responseBox").innerText = "Thinking...";
+            
+            // Wait 5 seconds before fetching/responding
+            setTimeout(async () => {
+                const res = await fetch("/api/chat", { 
+                    method: "POST", 
+                    headers: {"Content-Type": "application/json"}, 
+                    body: JSON.stringify({ message: msg }) 
+                });
+                const data = await res.json();
+                document.getElementById("responseBox").innerText = "Summarization: You said " + msg + ", correct? " + data.reply;
+            }, 5000);
         }
     </script>
 </body>
