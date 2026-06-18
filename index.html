@@ -18,22 +18,25 @@
 <body>
 
     <div id="main-container">
+        <!-- Security Panel -->
         <div class="panel" id="security-panel">
             <h1>Five Acres Support 🐱🏡</h1>
             <div class="g-recaptcha" data-sitekey="6LdT3h0tAAAAABFJS441bhcGpEeckL9HCMLhcVs7" data-type="image"></div>
             <button onclick="checkCaptcha()">Enter Support 🚀</button>
         </div>
 
+        <!-- Assistant Selection -->
         <div class="panel" id="assistant-panel" style="display: none;">
             <h3>Pick your assistant: 🤖</h3>
             <button onclick="selectAssistant('Oliver')">Oliver (Electronics) 💻</button>
             <button onclick="selectAssistant('Chibs')">Chibs (Other) 🎈</button>
         </div>
 
+        <!-- Chat Panel -->
         <div class="chat-panel" id="chat-panel" style="display: none;">
             <div id="chatHistory"></div>
             <div style="margin-top: 10px;">
-                <input type="text" id="userMessage" placeholder="Type your message...">
+                <input type="text" id="userMessage" placeholder="Type your message here...">
                 <button onclick="sendMessage()" style="width: 100%;">Send 💌</button>
             </div>
         </div>
@@ -42,8 +45,8 @@
     <script>
         let currentAssistant = "";
         let conversationHistory = [];
-        let transferPending = false; // Flag to wait for more details
-        let targetAssistant = "";   // Who we are transferring to
+        let transferPending = false; 
+        let targetAssistant = "";
 
         function checkCaptcha() {
             if (!grecaptcha.getResponse()) { alert("Please complete the puzzle! 🐾"); return; }
@@ -73,30 +76,32 @@
             conversationHistory.push("User: " + msg);
             input.value = "";
 
-            // Logic: Is this a transfer request?
             const lowerMsg = msg.toLowerCase();
-            const wantsOliver = lowerMsg.includes('oliver');
-            const wantsChibs = lowerMsg.includes('chibs');
+            const electronicKeywords = ['switch', 'computer', 'laptop', 'screen', 'phone', 'device', 'tablet', 'console'];
+            const nonElectronicKeywords = ['bag', 'clothing', 'rip', 'torn', 'tear', 'sew', 'food', 'weather', 'traffic'];
+            
+            const isElectronic = electronicKeywords.some(word => lowerMsg.includes(word));
+            const isNonElectronic = nonElectronicKeywords.some(word => lowerMsg.includes(word));
 
             setTimeout(() => {
-                // If we were waiting for details (transferPending) and just got them:
+                // 1. If we are finishing a transfer:
                 if (transferPending) {
                     const historySummary = conversationHistory.join(" | ");
-                    const reply = "Transfer complete. Hello, I am " + targetAssistant + ". I have reviewed our history: (" + historySummary + "). How can I help you with this?";
+                    const reply = "Transfer complete! Hello, I am " + targetAssistant + ". I have reviewed our history: (" + historySummary + "). I am ready to help you with that!";
                     document.getElementById("chatHistory").innerHTML += "<div><strong>" + targetAssistant + ":</strong> " + reply + "</div>";
                     currentAssistant = targetAssistant;
                     transferPending = false;
-                } 
-                // If the user is asking for the OTHER person:
-                else if ((currentAssistant === 'Oliver' && wantsChibs) || (currentAssistant === 'Chibs' && wantsOliver)) {
+                }
+                // 2. Oliver detects non-electronic request:
+                else if (currentAssistant === 'Oliver' && (isNonElectronic || (!isElectronic && (lowerMsg.includes('repair') || lowerMsg.includes('help')) && !msg.includes('switch')))) {
                     transferPending = true;
-                    targetAssistant = wantsChibs ? 'Chibs' : 'Oliver';
+                    targetAssistant = 'Chibs';
                     const reply = "I cannot do your request because it is out of my expertise. Please add more details before I transfer you.";
                     document.getElementById("chatHistory").innerHTML += "<div><strong>" + currentAssistant + ":</strong> " + reply + "</div>";
-                } 
-                // Normal conversation:
+                }
+                // 3. Normal conversation:
                 else {
-                    const reply = "I see. Please provide more specifics so I can better assist you with your request. 🐱";
+                    const reply = "I understand. Could you please provide the make, model, and specific issue so I can help? 🐱";
                     document.getElementById("chatHistory").innerHTML += "<div><strong>" + currentAssistant + ":</strong> " + reply + "</div>";
                 }
             }, 1000);
