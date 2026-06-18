@@ -45,7 +45,6 @@
         let transferPending = false; 
         let targetAssistant = "";
 
-        // The window functions need to be defined outside so they are accessible
         window.checkCaptcha = () => {
             if (!grecaptcha.getResponse()) { alert("Please complete the puzzle! 🐾"); return; }
             document.getElementById("security-panel").style.display = "none";
@@ -57,21 +56,31 @@
             document.getElementById("assistant-panel").style.display = "none";
             document.getElementById("chat-panel").style.display = "flex";
             
-            const systemPrompt = "You are " + name + ". " + (name === 'Oliver' ? "You are an IT specialist. Only help with electronics." : "You are an everyday companion. You cannot help with electronics.");
+            const systemPrompt = "You are " + name + ". " + (name === 'Oliver' ? 
+                "You are an IT specialist. If the user asks for non-electronics, say 'I cannot do your request because it is out of my expertise. Please add more details before I transfer you.' and flag for transfer." : 
+                "You are an everyday companion. If the user asks for electronics, say 'I cannot do your request because it is out of my expertise. Please add more details before I transfer you.' and flag for transfer.");
+            
             conversationHistory = [{ role: "system", content: systemPrompt }];
-            const greeting = (name === 'Oliver' ? "Hello, I am Oliver, your IT specialist." : "Hello, I am Chibs, your everyday companion.");
+            
+            const greeting = (name === 'Oliver' ? 
+                "Hello, I am Oliver, your IT specialist today. To start, please tell me your device's make and model, and your issues today for that device. If you have a issue with anything non-electronics related, please ask for our other representative, Chibs. (Disclaimer: I am fully run by AI and may be incorrect. Please email support@openrouter.com for information.)" : 
+                "Hello, I am Chibs, your everyday AI companion. You can ask me the weather, traffic, etc! But one thing, I cannot help with electronics. That is for Oliver, he knows way better than I do. (Disclaimer: I am fully run by AI and may be incorrect. Please email support@openrouter.com for information.)");
             
             document.getElementById("chatHistory").innerHTML = "<div><strong>" + name + ":</strong> " + greeting + "</div>";
             conversationHistory.push({ role: "assistant", content: greeting });
         };
 
         window.sendMessage = async () => {
-            // Vercel replaces this at build time!
             const API_KEY = import.meta.env.VITE_OPENROUTER_KEY || "YOUR_LOCAL_KEY_HERE";
-
             const input = document.getElementById("userMessage");
             const msg = input.value;
             if (!msg) return;
+
+            if (transferPending) {
+                currentAssistant = targetAssistant;
+                document.getElementById("chatHistory").innerHTML += "<div><strong>System:</strong> Transfer complete! Hello, I am " + currentAssistant + ". How can I help?</div>";
+                transferPending = false;
+            }
 
             document.getElementById("chatHistory").innerHTML += "<div><strong>You:</strong> " + msg + "</div>";
             conversationHistory.push({ role: "user", content: msg });
@@ -91,6 +100,11 @@
                 const botReply = data.choices[0].message.content;
                 document.getElementById("chatHistory").innerHTML += "<div><strong>" + currentAssistant + ":</strong> " + botReply + "</div>";
                 conversationHistory.push({ role: "assistant", content: botReply });
+
+                if (botReply.includes("transfer")) {
+                    transferPending = true;
+                    targetAssistant = (currentAssistant === 'Oliver' ? 'Chibs' : 'Oliver');
+                }
             } catch (error) {
                 document.getElementById("chatHistory").innerHTML += "<div><em>System: Connection error! 🐾</em></div>";
             }
