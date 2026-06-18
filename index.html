@@ -3,11 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <title>Five Acres Computer Support</title>
+    <!-- Script must be here to load the puzzle -->
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <style>
         body { font-family: 'Comic Sans MS', cursive, sans-serif; background-color: #ffeb3b; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        
         #main-container { background: #e1f5fe; padding: 30px; border-radius: 25px; border: 5px solid #03a9f4; box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 80vw; height: 75vh; display: flex; gap: 20px; }
-        .side-panel { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        
+        .panel { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         .chat-panel { flex: 2; display: flex; flex-direction: column; }
+        
         button { background-color: #ff4081; color: white; border: none; padding: 15px; border-radius: 15px; cursor: pointer; margin: 10px 0; font-weight: bold; }
         input { padding: 12px; border-radius: 10px; border: 2px solid #03a9f4; width: 100%; box-sizing: border-box; }
         #chatHistory { flex-grow: 1; background: white; border: 2px solid #03a9f4; border-radius: 10px; padding: 15px; overflow-y: auto; text-align: left; font-size: 1.1em; }
@@ -17,17 +22,21 @@
 <body>
 
     <div id="main-container">
-        <div class="side-panel" id="start-section">
+        <!-- CAPTCHA is visible immediately so it can render -->
+        <div class="panel" id="security-panel">
             <h1>Five Acres Support 🐱🏡</h1>
-            <button onclick="showAssistants()">Enter Support 🚀</button>
+            <div class="g-recaptcha" data-sitekey="6LdT3h0tAAAAABFJS441bhcGpEeckL9HCMLhcVs7"></div>
+            <button onclick="checkCaptcha()">Enter Support 🚀</button>
         </div>
 
-        <div class="side-panel" id="assistant-section" style="display: none;">
+        <!-- Hidden until captcha is passed -->
+        <div class="panel" id="assistant-panel" style="display: none;">
             <h3>Pick your assistant: 🤖</h3>
             <button onclick="selectAssistant('Oliver')">Oliver (Electronics) 💻</button>
             <button onclick="selectAssistant('Chibs')">Chibs (Other) 🎈</button>
         </div>
 
+        <!-- Chat Panel -->
         <div class="chat-panel" id="chat-panel" style="display: none;">
             <div id="chatHistory"></div>
             <div style="margin-top: 10px;">
@@ -40,14 +49,19 @@
     <script>
         let currentAssistant = "";
 
-        function showAssistants() {
-            document.getElementById("start-section").style.display = "none";
-            document.getElementById("assistant-section").style.display = "flex";
+        function checkCaptcha() {
+            const token = grecaptcha.getResponse();
+            if (!token) { 
+                alert("Please click the puzzle/checkbox first! 🐾"); 
+                return; 
+            }
+            document.getElementById("security-panel").style.display = "none";
+            document.getElementById("assistant-panel").style.display = "flex";
         }
 
         function selectAssistant(name) {
             currentAssistant = name;
-            document.getElementById("assistant-section").style.display = "none";
+            document.getElementById("assistant-panel").style.display = "none";
             document.getElementById("chat-panel").style.display = "flex";
             
             const oliverGreeting = "Hello, I am Oliver, your IT specialist today. To start, please tell me your device's make and model, and your issues today for that device. If you have a issue with anything non-electronics related, please ask for our other representative, Chibs. (Disclaimer: I am fully run by AI and may be incorrect. Please email support@openrouter.com for information.)";
