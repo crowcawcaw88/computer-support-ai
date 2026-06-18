@@ -44,7 +44,11 @@
         async function checkCaptcha() {
             const token = grecaptcha.getResponse();
             if (!token) { alert("Please click the checkbox first! 🐾"); return; }
-            const res = await fetch("/api/verify", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ token: token }) });
+            const res = await fetch("/api/verify", { 
+                method: "POST", 
+                headers: {"Content-Type": "application/json"}, 
+                body: JSON.stringify({ token: token }) 
+            });
             const data = await res.json();
             if (data.success) {
                 document.getElementById("captcha-container").style.display = "none";
@@ -57,8 +61,8 @@
             document.getElementById("chat-area").style.display = "block";
             document.getElementById("chatHistory").innerHTML = "";
             const greeting = name === 'Oliver' ? 
-                "Hello, I am your IT specialist, Oliver. To start, please say your devices make and model, and what is wrong. If you have any other questions not related to electronics, please ask for Chibs." : 
-                "Hello, I am chibs, your everyday AI assistant. One thing about me, I do everything except electronics. If you need electronics help, please ask for Oliver.";
+                "Hello, I am your IT specialist, Oliver. To start, please say your devices make and model, and what is wrong." : 
+                "Hello, I am chibs, your everyday AI assistant. I do everything except electronics!";
             document.getElementById("responseBox").innerText = greeting;
         }
 
@@ -70,7 +74,6 @@
             document.getElementById("chatHistory").innerHTML += "<div>You: " + msg + "</div>";
             input.value = "";
 
-            // If they are asking for the other assistant, trigger the summary request
             if ((currentAssistant === 'Oliver' && msg.toLowerCase().includes('chibs')) || 
                 (currentAssistant === 'Chibs' && msg.toLowerCase().includes('oliver'))) {
                 alert("Before I transfer you, please add more details about your issue.");
@@ -88,8 +91,13 @@
                 });
                 const data = await res.json();
                 
-                // If it was a transfer, the server should return a 'summary' field
-                let reply = isTransferring ? "Summarization: " + data.summary + ", correct?" : data.reply;
+                let reply;
+                if (isTransferring) {
+                    const summaryText = data.summary || "your issue"; 
+                    reply = "You said " + summaryText + ", correct?";
+                } else {
+                    reply = data.reply || "I'm sorry, I'm having a little trouble thinking right now. Could you rephrase that? 🐱";
+                }
                 
                 document.getElementById("responseBox").innerText = reply;
                 document.getElementById("chatHistory").innerHTML += "<div>" + currentAssistant + ": " + reply + "</div>";
