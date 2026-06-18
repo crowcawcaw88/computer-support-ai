@@ -18,7 +18,6 @@
 <body>
 
     <div id="main-container">
-        <!-- CAPTCHA: data-type="image" hints at a puzzle -->
         <div class="panel" id="security-panel">
             <h1>Five Acres Support 🐱🏡</h1>
             <div class="g-recaptcha" data-sitekey="6LdT3h0tAAAAABFJS441bhcGpEeckL9HCMLhcVs7" data-type="image"></div>
@@ -34,7 +33,7 @@
         <div class="chat-panel" id="chat-panel" style="display: none;">
             <div id="chatHistory"></div>
             <div style="margin-top: 10px;">
-                <input type="text" id="userMessage" placeholder="Type your message here...">
+                <input type="text" id="userMessage" placeholder="Type your message...">
                 <button onclick="sendMessage()" style="width: 100%;">Send 💌</button>
             </div>
         </div>
@@ -43,11 +42,11 @@
     <script>
         let currentAssistant = "";
         let conversationHistory = [];
-        let isTransferring = false;
+        let transferPending = false; // Flag to wait for more details
+        let targetAssistant = "";   // Who we are transferring to
 
         function checkCaptcha() {
-            const token = grecaptcha.getResponse();
-            if (!token) { alert("Please complete the puzzle first! 🐾"); return; }
+            if (!grecaptcha.getResponse()) { alert("Please complete the puzzle! 🐾"); return; }
             document.getElementById("security-panel").style.display = "none";
             document.getElementById("assistant-panel").style.display = "flex";
         }
@@ -56,8 +55,13 @@
             currentAssistant = name;
             document.getElementById("assistant-panel").style.display = "none";
             document.getElementById("chat-panel").style.display = "flex";
-            const greeting = (name === 'Oliver' ? "Hello! I'm Oliver. What is your device's make, model, and issue?" : "Hello! I'm Chibs. How can I help you today?");
+            
+            const oliverGreeting = "Hello, I am Oliver, your IT specialist today. To start, please tell me your device's make and model, and your issues today for that device. If you have a issue with anything non-electronics related, please ask for our other representative, Chibs. (Disclaimer: I am fully run by AI and may be incorrect. Please email support@openrouter.com for information.)";
+            const chibsGreeting = "Hello, I am Chibs, your everyday AI companion. You can ask me the weather, traffic, etc! But one thing, I cannot help with electronics. That is for Oliver, he knows way better than I do. (Disclaimer: I am fully run by AI and may be incorrect. Please email support@openrouter.com for information.)";
+            
+            const greeting = (name === 'Oliver' ? oliverGreeting : chibsGreeting);
             document.getElementById("chatHistory").innerHTML = "<div><strong>" + name + ":</strong> " + greeting + "</div>";
+            conversationHistory.push(name + ": " + greeting);
         }
 
         async function sendMessage() {
@@ -69,27 +73,33 @@
             conversationHistory.push("User: " + msg);
             input.value = "";
 
-            const thinkingDiv = document.createElement("div");
-            thinkingDiv.innerHTML = "<em>" + currentAssistant + " is thinking... 💭</em>";
-            document.getElementById("chatHistory").appendChild(thinkingDiv);
+            // Logic: Is this a transfer request?
+            const lowerMsg = msg.toLowerCase();
+            const wantsOliver = lowerMsg.includes('oliver');
+            const wantsChibs = lowerMsg.includes('chibs');
 
             setTimeout(() => {
-                thinkingDiv.remove();
-                const lowerMsg = msg.toLowerCase();
-                
-                // Logic: Only respond if it's a specific request, otherwise be conversational
-                let reply = "";
-                if (lowerMsg.includes("broken") || lowerMsg.includes("issue")) {
-                    reply = "I see. Please provide the exact model number so I can check my database for that specific " + currentAssistant + " issue.";
-                } else if (lowerMsg.includes("chibs") || lowerMsg.includes("oliver")) {
-                    isTransferring = true;
-                    reply = "I cannot do that request here. Please add a bit more detail about your problem, and I will transfer you.";
-                } else {
-                    reply = "I'm ready to help. Please tell me more about what is happening with your device.";
+                // If we were waiting for details (transferPending) and just got them:
+                if (transferPending) {
+                    const historySummary = conversationHistory.join(" | ");
+                    const reply = "Transfer complete. Hello, I am " + targetAssistant + ". I have reviewed our history: (" + historySummary + "). How can I help you with this?";
+                    document.getElementById("chatHistory").innerHTML += "<div><strong>" + targetAssistant + ":</strong> " + reply + "</div>";
+                    currentAssistant = targetAssistant;
+                    transferPending = false;
+                } 
+                // If the user is asking for the OTHER person:
+                else if ((currentAssistant === 'Oliver' && wantsChibs) || (currentAssistant === 'Chibs' && wantsOliver)) {
+                    transferPending = true;
+                    targetAssistant = wantsChibs ? 'Chibs' : 'Oliver';
+                    const reply = "I cannot do your request because it is out of my expertise. Please add more details before I transfer you.";
+                    document.getElementById("chatHistory").innerHTML += "<div><strong>" + currentAssistant + ":</strong> " + reply + "</div>";
+                } 
+                // Normal conversation:
+                else {
+                    const reply = "I see. Please provide more specifics so I can better assist you with your request. 🐱";
+                    document.getElementById("chatHistory").innerHTML += "<div><strong>" + currentAssistant + ":</strong> " + reply + "</div>";
                 }
-                
-                document.getElementById("chatHistory").innerHTML += "<div><strong>" + currentAssistant + ":</strong> " + reply + "</div>";
-            }, 2000);
+            }, 1000);
         }
     </script>
 </body>
