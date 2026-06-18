@@ -7,7 +7,7 @@
     <style>
         body { font-family: 'Comic Sans MS', cursive, sans-serif; background-color: #ffeb3b; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
         #main-container { background: #e1f5fe; padding: 30px; border-radius: 25px; border: 5px solid #03a9f4; box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 80vw; height: 75vh; display: flex; gap: 20px; }
-        .side-panel { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+        .side-panel { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         .chat-panel { flex: 2; display: flex; flex-direction: column; }
         button { background-color: #ff4081; color: white; border: none; padding: 15px; border-radius: 15px; cursor: pointer; margin: 10px 0; font-weight: bold; }
         input { padding: 12px; border-radius: 10px; border: 2px solid #03a9f4; width: 100%; box-sizing: border-box; }
@@ -41,7 +41,17 @@
 
     <script>
         let currentAssistant = "";
-        let chatLog = [];
+
+        async function checkCaptcha() {
+            const token = grecaptcha.getResponse();
+            if (!token) { 
+                alert("Please click the checkbox first! 🐾"); 
+                return; 
+            }
+            // If valid, hide captcha panel and show selection panel
+            document.getElementById("captcha-section").style.display = "none";
+            document.getElementById("assistant-section").style.display = "flex";
+        }
 
         function selectAssistant(name) {
             currentAssistant = name;
@@ -49,27 +59,17 @@
             const oliverGreeting = "Hello, I am Oliver, your IT specialist today. To start, please tell me your device's make and model, and your issues today for that device. If you have a issue with anything non-electronics related, please ask for our other representative, Chibs. (Disclaimer: I am fully run by AI and may be incorrect. Please email support@openrouter.com for information.)";
             const chibsGreeting = "Hello, I am Chibs, your everyday AI companion. You can ask me the weather, traffic, etc! But one thing, I cannot help with electronics. That is for Oliver, he knows way better than I do. (Disclaimer: I am fully run by AI and may be incorrect. Please email support@openrouter.com for information.)";
             
-            const greeting = name === 'Oliver' ? oliverGreeting : chibsGreeting;
-            document.getElementById("chatHistory").innerHTML = "<div><strong>" + name + ":</strong> " + greeting + "</div>";
+            document.getElementById("chatHistory").innerHTML = "<div><strong>" + name + ":</strong> " + (name === 'Oliver' ? oliverGreeting : chibsGreeting) + "</div>";
         }
 
         function sendMessage() {
             const input = document.getElementById("userMessage");
             const msg = input.value;
             if (!msg) return;
-
-            // Logic check for expertise
-            const isElectronicRequest = msg.toLowerCase().includes("phone") || msg.toLowerCase().includes("computer") || msg.toLowerCase().includes("laptop");
-            
-            if ((currentAssistant === 'Chibs' && isElectronicRequest) || (currentAssistant === 'Oliver' && !isElectronicRequest && msg.length > 10)) {
-                document.getElementById("chatHistory").innerHTML += "<div><strong>" + currentAssistant + ":</strong> I cannot do your request because it is out of my expertise. Please add more details before I transfer you.</div>";
-            } else {
-                document.getElementById("chatHistory").innerHTML += "<div><strong>You:</strong> " + msg + "</div>";
-            }
+            document.getElementById("chatHistory").innerHTML += "<div><strong>You:</strong> " + msg + "</div>";
             input.value = "";
+            // Add your API logic here!
         }
-        
-        // ... (Keep your existing captcha and other functions)
     </script>
 </body>
 </html>
