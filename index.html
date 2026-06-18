@@ -5,7 +5,6 @@
     <title>Support AI</title>
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <style>
-        /* Your original styles */
         body { font-family: sans-serif; background-color: #f4f4f9; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
         #gate, #captcha-container, #chat-container { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; }
         #main-site { display: none; }
@@ -15,7 +14,6 @@
 </head>
 <body>
 
-    <!-- MAINTENANCE GATE -->
     <div id="gate">
         <h1>Site Under Maintenance (503)</h1>
         <p>Please enter the repair code to access.</p>
@@ -23,7 +21,6 @@
         <button onclick="unlock()">Unlock</button>
     </div>
 
-    <!-- YOUR FULL SITE -->
     <div id="main-site">
         <div id="captcha-container">
             <h3>Verify you're human!</h3>
@@ -40,7 +37,6 @@
     </div>
 
     <script>
-        // 1. Maintenance Unlock
         function unlock() {
             if (document.getElementById("passInput").value === "Repair2026") {
                 document.getElementById("gate").style.display = "none";
@@ -48,26 +44,30 @@
             } else { alert("Incorrect code! 🚫"); }
         }
 
-        // 2. Captcha Logic
         async function checkCaptcha() {
             const token = grecaptcha.getResponse();
             if (!token) { alert("Please complete the reCAPTCHA first! 🐾"); return; }
-            const res = await fetch("/./api/verify", {
+            
+            const res = await fetch("/api/verify", {
                 method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ token: token })
             });
             const data = await res.json();
+            
             if (data.success) {
                 document.getElementById("captcha-container").style.display = "none";
                 document.getElementById("chat-container").style.display = "block";
-            } else { alert("Verification failed."); }
+            } else {
+                alert("Verification failed: " + data.reason);
+            }
         }
 
-        // 3. Chat Logic
         async function sendMessage() {
             const message = document.getElementById("userMessage").value;
-            const res = await fetch("/./api/chat", {
+            const res = await fetch("/api/chat", {
                 method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ message: message })
             });
             const data = await res.json();
