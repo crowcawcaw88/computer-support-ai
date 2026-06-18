@@ -3,16 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <title>Five Acres Computer Support</title>
-    <!-- Script must be here to load the puzzle -->
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <style>
         body { font-family: 'Comic Sans MS', cursive, sans-serif; background-color: #ffeb3b; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        
         #main-container { background: #e1f5fe; padding: 30px; border-radius: 25px; border: 5px solid #03a9f4; box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 80vw; height: 75vh; display: flex; gap: 20px; }
-        
         .panel { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         .chat-panel { flex: 2; display: flex; flex-direction: column; }
-        
         button { background-color: #ff4081; color: white; border: none; padding: 15px; border-radius: 15px; cursor: pointer; margin: 10px 0; font-weight: bold; }
         input { padding: 12px; border-radius: 10px; border: 2px solid #03a9f4; width: 100%; box-sizing: border-box; }
         #chatHistory { flex-grow: 1; background: white; border: 2px solid #03a9f4; border-radius: 10px; padding: 15px; overflow-y: auto; text-align: left; font-size: 1.1em; }
@@ -22,14 +18,14 @@
 <body>
 
     <div id="main-container">
-        <!-- CAPTCHA is visible immediately so it can render -->
+        <!-- Security Panel -->
         <div class="panel" id="security-panel">
             <h1>Five Acres Support 🐱🏡</h1>
             <div class="g-recaptcha" data-sitekey="6LdT3h0tAAAAABFJS441bhcGpEeckL9HCMLhcVs7"></div>
             <button onclick="checkCaptcha()">Enter Support 🚀</button>
         </div>
 
-        <!-- Hidden until captcha is passed -->
+        <!-- Assistant Selection -->
         <div class="panel" id="assistant-panel" style="display: none;">
             <h3>Pick your assistant: 🤖</h3>
             <button onclick="selectAssistant('Oliver')">Oliver (Electronics) 💻</button>
@@ -48,13 +44,12 @@
 
     <script>
         let currentAssistant = "";
+        let conversationHistory = [];
+        let isTransferring = false;
 
         function checkCaptcha() {
             const token = grecaptcha.getResponse();
-            if (!token) { 
-                alert("Please click the puzzle/checkbox first! 🐾"); 
-                return; 
-            }
+            if (!token) { alert("Please click the puzzle/checkbox first! 🐾"); return; }
             document.getElementById("security-panel").style.display = "none";
             document.getElementById("assistant-panel").style.display = "flex";
         }
@@ -67,7 +62,9 @@
             const oliverGreeting = "Hello, I am Oliver, your IT specialist today. To start, please tell me your device's make and model, and your issues today for that device. If you have a issue with anything non-electronics related, please ask for our other representative, Chibs. (Disclaimer: I am fully run by AI and may be incorrect. Please email support@openrouter.com for information.)";
             const chibsGreeting = "Hello, I am Chibs, your everyday AI companion. You can ask me the weather, traffic, etc! But one thing, I cannot help with electronics. That is for Oliver, he knows way better than I do. (Disclaimer: I am fully run by AI and may be incorrect. Please email support@openrouter.com for information.)";
             
-            document.getElementById("chatHistory").innerHTML = "<div><strong>" + name + ":</strong> " + (name === 'Oliver' ? oliverGreeting : chibsGreeting) + "</div>";
+            const greeting = (name === 'Oliver' ? oliverGreeting : chibsGreeting);
+            document.getElementById("chatHistory").innerHTML = "<div><strong>" + name + ":</strong> " + greeting + "</div>";
+            conversationHistory.push(name + ": " + greeting);
         }
 
         async function sendMessage() {
@@ -76,23 +73,39 @@
             if (!msg) return;
 
             document.getElementById("chatHistory").innerHTML += "<div><strong>You:</strong> " + msg + "</div>";
+            conversationHistory.push("User: " + msg);
             input.value = "";
 
             const thinkingDiv = document.createElement("div");
             thinkingDiv.innerHTML = "<em>" + currentAssistant + " is thinking... 💭</em>";
             document.getElementById("chatHistory").appendChild(thinkingDiv);
 
-            const timeoutTrigger = setTimeout(() => {
-                if (thinkingDiv.parentNode) {
-                    thinkingDiv.innerHTML = "<strong>System:</strong> I'm sorry, I'm having trouble connecting to the servers. Are you still there? 🐱";
-                }
-            }, 10000);
+            // Detect if user is asking for the other person
+            const lowerMsg = msg.toLowerCase();
+            const wantsTransfer = (currentAssistant === 'Oliver' && lowerMsg.includes('chibs')) || 
+                                  (currentAssistant === 'Chibs' && lowerMsg.includes('oliver'));
 
             setTimeout(() => {
-                clearTimeout(timeoutTrigger);
                 thinkingDiv.remove();
-                const reply = "I understand you said: \"" + msg + "\". Let me help you with that! 🐱";
-                document.getElementById("chatHistory").innerHTML += "<div><strong>" + currentAssistant + ":</strong> " + reply + "</div>";
+
+                if (isTransferring) {
+                    // Completing the transfer
+                    const summary = conversationHistory.join(" | ");
+                    const reply = "Transferring complete! I have reviewed our history: (" + summary + "). I am now ready to assist you further.";
+                    document.getElementById("chatHistory").innerHTML += "<div><strong>System:</strong> " + reply + "</div>";
+                    isTransferring = false;
+                } else if (wantsTransfer) {
+                    // Warning before transfer
+                    isTransferring = true;
+                    const reply = "I cannot do your request because it is out of my expertise. Please add more details before I transfer you.";
+                    document.getElementById("chatHistory").innerHTML += "<div><strong>" + currentAssistant + ":</strong> " + reply + "</div>";
+                    conversationHistory.push(currentAssistant + ": " + reply);
+                } else {
+                    // Normal response
+                    const reply = "I understand you need help with: \"" + msg + "\". Let me look into that for you! 🐱";
+                    document.getElementById("chatHistory").innerHTML += "<div><strong>" + currentAssistant + ":</strong> " + reply + "</div>";
+                    conversationHistory.push(currentAssistant + ": " + reply);
+                }
             }, 2000);
         }
     </script>
