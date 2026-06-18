@@ -11,6 +11,7 @@
         input { padding: 12px; border-radius: 10px; border: 2px solid #03a9f4; width: 80%; }
         #responseBox { margin-top: 20px; font-weight: bold; color: #d81b60; padding: 10px; }
         h1 { color: #f50057; }
+        .g-recaptcha { display: flex; justify-content: center; margin: 15px 0; }
     </style>
 </head>
 <body>
@@ -18,8 +19,8 @@
     <div id="captcha-container">
         <h1>Five Acres Computer Support 🐱🏡</h1>
         <h3>Verify you're human! 🧩</h3>
-        <div class="g-recaptcha" data-sitekey="6LdT3h0tAAAAABFJS441bhcGpEeckL9HCMLhcVs7" data-size="invisible"></div>
-        <button onclick="triggerCaptcha()">Enter Support 🚀</button>
+        <!-- Changed to data-size="normal" to show the checkbox -->
+        <div class="g-recaptcha" data-sitekey="6LdT3h0tAAAAABFJS441bhcGpEeckL9HCMLhcVs7" data-size="normal"></div>
     </div>
 
     <div id="chat-container" style="display: none;">
@@ -36,11 +37,8 @@
     <script>
         let currentAssistant = "";
 
-        function triggerCaptcha() {
-            grecaptcha.execute();
-        }
-
-        async function onCaptchaSolved(token) {
+        // This function runs automatically when the checkbox is clicked
+        async function verifyCallback(token) {
             const res = await fetch("/api/verify", { 
                 method: "POST", 
                 headers: {"Content-Type": "application/json"}, 
@@ -50,13 +48,16 @@
             if (data.success) {
                 document.getElementById("captcha-container").style.display = "none";
                 document.getElementById("chat-container").style.display = "block";
-            } else { alert("Failed: " + data.reason); }
+            } else { 
+                alert("Verification failed. Please try again!"); 
+                grecaptcha.reset();
+            }
         }
 
         window.onload = function() {
             grecaptcha.render(document.querySelector('.g-recaptcha'), {
                 'sitekey': '6LdT3h0tAAAAABFJS441bhcGpEeckL9HCMLhcVs7',
-                'callback': onCaptchaSolved
+                'callback': verifyCallback
             });
         };
 
