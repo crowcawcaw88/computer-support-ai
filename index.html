@@ -19,8 +19,8 @@
     <div id="captcha-container">
         <h1>Five Acres Computer Support 🐱🏡</h1>
         <h3>Verify you're human! 🧩</h3>
-        <!-- Changed to data-size="normal" to show the checkbox -->
-        <div class="g-recaptcha" data-sitekey="6LdT3h0tAAAAABFJS441bhcGpEeckL9HCMLhcVs7" data-size="normal"></div>
+        <div class="g-recaptcha" data-sitekey="6LdT3h0tAAAAABFJS441bhcGpEeckL9HCMLhcVs7"></div>
+        <button onclick="checkCaptcha()">Enter Support 🚀</button>
     </div>
 
     <div id="chat-container" style="display: none;">
@@ -37,8 +37,13 @@
     <script>
         let currentAssistant = "";
 
-        // This function runs automatically when the checkbox is clicked
-        async function verifyCallback(token) {
+        async function checkCaptcha() {
+            const token = grecaptcha.getResponse();
+            if (!token) {
+                alert("Please click the checkbox first! 🐾");
+                return;
+            }
+            
             const res = await fetch("/api/verify", { 
                 method: "POST", 
                 headers: {"Content-Type": "application/json"}, 
@@ -53,13 +58,6 @@
                 grecaptcha.reset();
             }
         }
-
-        window.onload = function() {
-            grecaptcha.render(document.querySelector('.g-recaptcha'), {
-                'sitekey': '6LdT3h0tAAAAABFJS441bhcGpEeckL9HCMLhcVs7',
-                'callback': verifyCallback
-            });
-        };
 
         function selectAssistant(name) {
             currentAssistant = name;
