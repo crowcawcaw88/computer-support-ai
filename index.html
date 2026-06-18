@@ -33,7 +33,7 @@
         <div class="chat-panel" id="chat-panel" style="display: none;">
             <div id="chatHistory"></div>
             <div style="margin-top: 10px;">
-                <input type="text" id="userMessage" placeholder="Type your message...">
+                <input type="text" id="userMessage" placeholder="Type your message here...">
                 <button onclick="sendMessage()" style="width: 100%;">Send 💌</button>
             </div>
         </div>
@@ -44,11 +44,7 @@
 
         async function checkCaptcha() {
             const token = grecaptcha.getResponse();
-            if (!token) { 
-                alert("Please click the checkbox first! 🐾"); 
-                return; 
-            }
-            // If valid, hide captcha panel and show selection panel
+            if (!token) { alert("Please click the checkbox first! 🐾"); return; }
             document.getElementById("captcha-section").style.display = "none";
             document.getElementById("assistant-section").style.display = "flex";
         }
@@ -62,13 +58,31 @@
             document.getElementById("chatHistory").innerHTML = "<div><strong>" + name + ":</strong> " + (name === 'Oliver' ? oliverGreeting : chibsGreeting) + "</div>";
         }
 
-        function sendMessage() {
+        async function sendMessage() {
             const input = document.getElementById("userMessage");
             const msg = input.value;
             if (!msg) return;
+
             document.getElementById("chatHistory").innerHTML += "<div><strong>You:</strong> " + msg + "</div>";
             input.value = "";
-            // Add your API logic here!
+
+            const thinkingDiv = document.createElement("div");
+            thinkingDiv.innerHTML = "<em>" + currentAssistant + " is thinking... 💭</em>";
+            document.getElementById("chatHistory").appendChild(thinkingDiv);
+
+            const timeoutTrigger = setTimeout(() => {
+                if (thinkingDiv.parentNode) {
+                    thinkingDiv.innerHTML = "<strong>System:</strong> I'm sorry, I'm having trouble connecting to the servers. Are you still there? 🐱";
+                }
+            }, 10000);
+
+            // Simulate server response
+            setTimeout(() => {
+                clearTimeout(timeoutTrigger);
+                thinkingDiv.remove();
+                const reply = "I understand you said: \"" + msg + "\". Let me help you with that! 🐱";
+                document.getElementById("chatHistory").innerHTML += "<div><strong>" + currentAssistant + ":</strong> " + reply + "</div>";
+            }, 2000);
         }
     </script>
 </body>
